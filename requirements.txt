@@ -1,0 +1,7 @@
+﻿openai>=1.0.0
+pinecone>=5.0.0
+python-dotenv>=1.0.0
+tiktoken>=0.7.0
+dateparser>=1.2.0
+vaderSentiment>=3.3.2
+tqdm>=4.66.0
