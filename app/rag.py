@@ -207,7 +207,7 @@ def build_prompt(query, contexts, agg, workflow):
 """)
 
     system = """
-You are a Cybersecurity Compliance Analyst (Energy Sector).
+You are a Cybersecurity Compliance Expert (Energy Sector).
 
 Rules:
 - Use ONLY provided context
