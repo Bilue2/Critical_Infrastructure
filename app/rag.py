@@ -98,8 +98,8 @@ def wants_workflow_output(query: str) -> bool:
 # =========================================================
 def retrieve(
     query: str,
-    top_k: int = 8,
-    min_score: float = 0.65,
+    top_k: int = 12,
+    min_score: float = 0.70,
     exclude_owner_responses: bool = True,
 ) -> List[Dict[str, Any]]:
 
@@ -191,7 +191,7 @@ def aggregate_contexts(contexts: List[Dict[str, Any]]) -> Dict[str, Any]:
 # =========================================================
 # PROMPT
 # =========================================================
-def build_prompt(query, contexts, agg, workflow):
+def build_prompt(query, contexts, agg, workflow, detail_level: str = "standard"):
 
     ctx = []
     for c in contexts:
@@ -207,33 +207,65 @@ def build_prompt(query, contexts, agg, workflow):
 """)
 
     system = """
-You are a Cybersecurity Compliance Expert (Energy Sector).
+You are a Cybersecurity Compliance Expert specializing in Energy Sector regulatory frameworks (NERC, NIST, CISA, FERC, DOE).
 
-Rules:
-- Use ONLY provided context
-- Never hallucinate requirements
-- Every claim must cite chunk_id
+Your response should be:
+- **Comprehensive**: Explain the "why" behind requirements, not just the "what"
+- **Structured**: Organize findings by control family, risk level, or compliance domain
+- **Evidenced**: Cite every claim with [chunk_id] and relevant metadata (organization, page_number)
+- **Actionable**: Provide specific, implementable guidance grounded in provided context
+
+Guidelines:
+1. Always include context about which organization (NERC/NIST/etc.) governs each requirement
+2. Explain interdependencies between related controls when visible in context
+3. When multiple sources discuss the same requirement, synthesize them with citations
+4. Use the control_families aggregation to identify patterns and priorities
+5. Never introduce external knowledge—only reference provided chunks
+6. For ambiguities, explicitly state what the context does not cover
 """
 
     if workflow:
         schema = """
-Return JSON:
+Return JSON with detailed reasoning:
 {
-  "answer_summary": "",
-  "key_requirements": [],
-  "policy_recommendations": [],
-  "draft_policy_language": []
+  "answer_summary": "Executive summary (2-3 sentences)",
+  "regulatory_context": "Which organizations and frameworks apply",
+  "key_requirements": [
+    {
+      "requirement": "specific requirement text",
+      "source": "[chunk_id]",
+      "implementation": "how to implement this",
+      "risk_if_not_met": "compliance/operational impact"
+    }
+  ],
+  "policy_recommendations": ["specific, actionable recommendations"],
+  "draft_policy_language": ["proposed policy text"],
+  "interdependencies": "how requirements relate to each other"
 }
 """
     else:
         schema = """
 Return JSON:
 {
-  "answer_summary": "",
-  "key_points": [],
+  "answer_summary": "Executive summary (2-3 sentences)",
+  "regulatory_context": "Which organizations and frameworks apply",
+  "key_points": [
+    {
+      "point": "key finding or requirement",
+      "source": "[chunk_id]",
+      "organization": "governing organization",
+      "relevance": "why this matters"
+    }
+  ],
   "sources": []
 }
 """
+
+    detail_instructions = ""
+    if detail_level == "comprehensive":
+        detail_instructions = "\n\nProvide an in-depth response that explains regulatory context, implementation considerations, and cross-control relationships."
+    elif detail_level == "brief":
+        detail_instructions = "\n\nProvide a concise response focused on the core answer."
 
     user = f"""
 QUESTION:
@@ -245,7 +277,7 @@ CONTROL SIGNALS:
 CONTEXT:
 {chr(10).join(ctx)}
 
-{schema}
+{schema}{detail_instructions}
 """
 
     return [
@@ -259,13 +291,27 @@ CONTEXT:
 # =========================================================
 def generate_grounded_response(
     query: str,
-    top_k: int = 8,
+    top_k: int = 12,
     min_recurring_reviews: int = 2,
     include_debug: bool = False,
+    detail_level: str = "standard",
 ):
+    """
+    Generate a grounded, detailed response to a compliance query.
+    
+    Args:
+        query: The user's compliance question
+        top_k: Number of context chunks to retrieve (default 12 for comprehensive detail)
+        min_recurring_reviews: Minimum recurring reviews threshold
+        include_debug: Include debug metadata in response
+        detail_level: Response detail level - "brief", "standard", or "comprehensive"
+    
+    Returns:
+        dict: Grounded response with citations and structured output
+    """
 
     client = OpenAI(api_key=_env("OPENAI_API_KEY"))
-    model = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
+    model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
     workflow = wants_workflow_output(query)
 
@@ -273,16 +319,16 @@ def generate_grounded_response(
 
     agg = aggregate_contexts(contexts)
 
-    messages = build_prompt(query, contexts, agg, workflow)
+    messages = build_prompt(query, contexts, agg, workflow, detail_level=detail_level)
 
-    resp = client.responses.create(
+    resp = client.chat.completions.create(
         model=model,
-        input=messages,
-        text={"format": {"type": "json_object"}},
+        messages=messages,
+        response_format={"type": "json_object"},
         temperature=0,
     )
 
-    raw = resp.output_text.strip()
+    raw = resp.choices[0].message.content.strip()
     cleaned = _extract_json_object(raw)
 
     try:
@@ -297,6 +343,7 @@ def generate_grounded_response(
     if include_debug:
         out["debug"] = {
             "workflow": workflow,
+            "detail_level": detail_level,
             "num_contexts": len(contexts),
             "control_families": agg,
         }
