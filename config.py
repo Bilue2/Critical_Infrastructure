@@ -1,8 +1,34 @@
 import os
+from pathlib import Path
+from typing import Optional
+
 from dotenv import load_dotenv
 
-# Load variables from .env in project root
-load_dotenv()
+ROOT_DIR = Path(__file__).resolve().parent
+
+
+def _resolve_env_path() -> Optional[Path]:
+    candidates = [
+        Path.cwd() / ".env",
+        Path.cwd() / ".env.local",
+        ROOT_DIR / ".env",
+        ROOT_DIR / ".env.local",
+    ]
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return None
+
+
+def _load_environment() -> None:
+    env_path = _resolve_env_path()
+    if env_path is not None:
+        load_dotenv(dotenv_path=env_path, override=False)
+    else:
+        load_dotenv(override=False)
+
+
+_load_environment()
 
 def get_api_key():
     """Fetch OpenAI API key from environment."""

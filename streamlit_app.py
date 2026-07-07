@@ -4,7 +4,7 @@
 import json
 import time
 import uuid
-import streamlit as st
+import streamlit as st  # type: ignore[import]
 from app.rag import generate_grounded_response
 
 st.set_page_config(
@@ -140,10 +140,141 @@ prompt = st.chat_input("Ask about cyber risk, controls, or compliance gaps...")
 # =========================
 def render_response(out: dict):
 
-    st.subheader("Summary")
-    st.write(out.get("answer_summary", "No summary returned."))
+    summary = out.get("answer_summary") or out.get("summary") or ""
+    if summary:
+        st.subheader("Answer")
+        st.write(summary)
+        st.divider()
 
-    st.divider()
+    points = out.get("key_points", [])
+    if points:
+        st.subheader("Key Points")
+        for p in points:
+            if isinstance(p, dict):
+                text = p.get("point") or p.get("text") or str(p)
+                st.markdown(f"- **{text}**")
+                if p.get("source_chunk_ids"):
+                    st.caption(f"Chunks: {p.get('source_chunk_ids', [])}")
+            else:
+                st.markdown(f"- **{p}**")
+
+        st.divider()
+
+    reqs = out.get("key_requirements", [])
+    if reqs:
+        st.subheader("Key Requirements")
+        for r in reqs:
+            if isinstance(r, dict):
+                st.markdown(f"- **{r.get('requirement', '')}**")
+                st.caption(f"Chunks: {r.get('evidence', [])}")
+            else:
+                st.markdown(f"- **{r}**")
+
+        st.divider()
+
+    recs = out.get("policy_recommendations", [])
+    if recs:
+        st.subheader("🛡️ Policy Recommendations")
+        for r in recs:
+            if isinstance(r, dict):
+                st.markdown(f"**→ {r.get('recommendation', '')}**")
+                st.write(r.get("justification", ""))
+                st.caption(f"Chunks: {r.get('evidence', [])}")
+            elif isinstance(r, str):
+                st.markdown(f"**→ {r}**")
+            else:
+                st.write(r)
+
+        st.divider()
+
+    draft = out.get("draft_policy_language", [])
+    if draft:
+        st.subheader("📄 Draft Policy Language")
+        for d in draft:
+            if isinstance(d, dict):
+                st.markdown(f"### {d.get('section', 'Section')}")
+                st.code(d.get("text", ""))
+            else:
+                st.code(str(d))
+        st.divider()
+
+    st.subheader("Sources (chunk IDs)")
+    sources = set()
+    for r in out.get("key_requirements", []):
+        if isinstance(r, dict):
+            sources.update(r.get("evidence", []))
+
+    for r in out.get("policy_recommendations", []):
+        if isinstance(r, dict):
+            sources.update(r.get("evidence", []))
+
+    for p in out.get("key_points", []):
+        if isinstance(p, dict):
+            sources.update(p.get("source_chunk_ids", []))
+
+    for s in out.get("sources", []):
+        if isinstance(s, dict):
+            chunk_id = s.get("chunk_id")
+            if chunk_id:
+                sources.add(chunk_id)
+        elif isinstance(s, str):
+            sources.add(s)
+
+    if sources:
+        st.code("\n".join(sorted(sources)))
+    else:
+        st.write("_No sources returned._")
+
+    if st.session_state.settings["debug_on"]:
+        with st.expander("Debug JSON"):
+            st.code(json.dumps(out, indent=2))
+
+
+# =========================
+# Chat flow
+# =========================
+if prompt:
+    convo["messages"].append({"role": "user", "content": prompt})
+
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    with st.chat_message("assistant"):
+        with st.spinner("Retrieving NERC/NIST/CISA evidence..."):
+            out = generate_grounded_response(
+                query=prompt,
+                top_k=st.session_state.settings["top_k"],
+                min_recurring_reviews=2,
+                include_debug=st.session_state.settings["debug_on"],
+            )
+
+        if "error" in out:
+            st.error(out["error"])
+            st.code(out.get("raw_output", ""))
+        else:
+            render_response(out)
+
+            convo["messages"].append({
+                "role": "assistant",
+                "content": out.get("answer_summary", "") or out.get("summary", "")
+            })
+
+    # -------------------------
+    # General answer points
+    # -------------------------
+    points = out.get("key_points", [])
+    if points:
+        st.subheader("Key Points")
+        for p in points:
+            if isinstance(p, dict):
+                text = p.get("point") or p.get("text") or str(p)
+                st.markdown(f"- **{text}**")
+                if p.get("source_chunk_ids"):
+                    st.caption(f"Chunks: {p.get('source_chunk_ids', [])}")
+            else:
+                st.markdown(f"- **{p}**")
+
+        st.divider()
 
     # -------------------------
     # Key requirements
@@ -206,6 +337,18 @@ def render_response(out: dict):
     for r in out.get("policy_recommendations", []):
         if isinstance(r, dict):
             sources.update(r.get("source_chunk_ids", []))
+
+    for p in out.get("key_points", []):
+        if isinstance(p, dict):
+            sources.update(p.get("source_chunk_ids", []))
+
+    for s in out.get("sources", []):
+        if isinstance(s, dict):
+            chunk_id = s.get("chunk_id")
+            if chunk_id:
+                sources.add(chunk_id)
+        elif isinstance(s, str):
+            sources.add(s)
 
     if sources:
         st.code("\n".join(sorted(sources)))

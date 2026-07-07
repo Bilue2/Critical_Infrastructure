@@ -1,6 +1,6 @@
 ﻿import json
 import os
-from time import time
+import time
 from typing import Dict, Any, List
 
 from dotenv import load_dotenv
@@ -160,7 +160,7 @@ def format_embedding_text(item: Dict[str, Any]) -> str:
 # =========================================================
 # MAIN INDEXING
 # =========================================================
-def main(chunks_path: str, reset: bool = False):
+def main(chunks_path: str, reset: bool = False, namespace: str = ""):
 
     openai_key = os.getenv("OPENAI_API_KEY")
     pinecone_key = os.getenv("PINECONE_API_KEY")
@@ -199,7 +199,7 @@ def main(chunks_path: str, reset: bool = False):
     ensure_index(pc, index_name, dimension, cloud, region)
 
     index = pc.Index(index_name)
-    NAMESPACE = args.namespace
+    pinecone_namespace = namespace
 
 
     if reset:
@@ -263,7 +263,7 @@ def main(chunks_path: str, reset: bool = False):
         # Upsert
         index.upsert(
             vectors=vectors,
-            namespace=NAMESPACE
+            namespace=pinecone_namespace
         )
 
     stats = index.describe_index_stats()
@@ -289,5 +289,6 @@ if __name__ == "__main__":
 
     main(
         chunks_path=args.chunks,
-        reset=args.reset
+        reset=args.reset,
+        namespace=args.namespace,
     )

@@ -6,8 +6,9 @@ from PyPDF2 import PdfReader
 
 
 # -------- CONFIG --------
-BASE_DIR = r".~\Critical_Infrastructure\data\pdfs"
-OUTPUT_FILE = r".~\Critical_Infrastructure\data\critical_infra_corpus.jsonl"
+ROOT_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = ROOT_DIR / "data" / "pdf"
+OUTPUT_FILE = ROOT_DIR / "data" / "critical_infra_corpus.jsonl"
 
 SECTOR = "Energy"
 ORGANIZATION = "NERC"
@@ -94,7 +95,7 @@ def process_pdf(pdf_path, chunk_id_start):
 
 
 def main():
-    pdf_files = [f for f in Path(BASE_DIR).glob("*.pdf")]
+    pdf_files = [f for f in BASE_DIR.glob("*.pdf")]
     all_entries = []
     chunk_id_counter = 1
 
