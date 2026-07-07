@@ -87,6 +87,12 @@ PINECONE_REGION=us-east-1
 OPENAI_EMBED_MODEL=text-embedding-3-small
 OPENAI_MODEL=gpt-4.1-mini
 
+# Optional live web refresh
+SERPAPI_API_KEY=your_key
+ENABLE_SERPAPI_SEARCH=true
+SERPAPI_MAX_RESULTS=3
+SERPAPI_QUERY_TEMPLATE={query} critical infrastructure cybersecurity energy sector
+
 #How to Run Each File
 🟡 STEP 1 — Prepare Energy Corpus
 Script:
@@ -119,7 +125,32 @@ Generates embeddings
 Detects control families (Access Control, Incident Response, etc.)
 Stores vectors in Pinecone
 Adds metadata for filtering and retrieval
-🔵 STEP 3 — Query Bot (CLI)
+🟢 STEP 3 — Refresh Web Sources
+Script:
+
+scripts/06_ingest_web_sources.py
+
+Run default SerpAPI discovery:
+python -m scripts.06_ingest_web_sources
+
+Run with direct URLs:
+python -m scripts.06_ingest_web_sources \
+  --url https://www.cisa.gov/news-events/cybersecurity-advisories
+
+Run from a URL file:
+python -m scripts.06_ingest_web_sources \
+  --urls-file urls.txt
+
+Preview without writing to Pinecone:
+python -m scripts.06_ingest_web_sources --dry-run
+
+What it does:
+Searches for Energy Sector cybersecurity policy and OT/ICS sources
+Scrapes HTML and PDF sources
+Chunks and embeds source text
+Checks similarity against existing Pinecone vectors
+Adds only novel chunks to Pinecone
+🔵 STEP 4 — Query Bot (CLI)
 Script:
 
 scripts/04_query_bot.py
@@ -135,7 +166,7 @@ What it does:
 Runs retrieval pipeline
 Calls LLM
 Returns structured cybersecurity answer
-🟣 STEP 4 — Streamlit App (UI)
+🟣 STEP 5 — Streamlit App (UI)
 Run:
 streamlit run streamlit_app.py
 Features:
@@ -144,7 +175,7 @@ Grounded cybersecurity answers
 Retrieved chunk evidence display
 Policy recommendation breakdown
 Debug mode toggle
-🔴 STEP 5 — Evaluation
+🔴 STEP 6 — Evaluation
 Script:
 
 scripts/05_eval_grounding.py
