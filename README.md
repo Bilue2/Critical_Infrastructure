@@ -36,8 +36,6 @@ It is not a general chatbot. It is designed for grounded analysis over critical 
 
 ![Answer with sources expanded](image/answer.png)
 
-![Sidebar settings](image/sidebar.png)
-
 ## Quick Start
 
 These steps assume you have just downloaded the repository and want to run the app on your own computer.
