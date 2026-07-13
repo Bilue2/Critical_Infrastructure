@@ -20,7 +20,7 @@ Steps:
 
 Expected result: an evidence-grounded answer appears in the chat.
 
-Screenshot: TODO: Insert screenshot of browser chat.
+![Browser chat](../image/chat.png)
 
 ## Grounded Answers
 

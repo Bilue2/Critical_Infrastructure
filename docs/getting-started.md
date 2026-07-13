@@ -57,8 +57,8 @@ What are common attack vectors against energy-sector ICS and OT systems?
 
 Expected result: the app should return a cybersecurity summary, likely attack-vector sections, and a source list.
 
-## Screenshot Placeholders
+## Screenshots
 
-TODO: Insert screenshot of first successful app launch.
+![First successful app launch](../image/chat.png)
 
-TODO: Insert screenshot of a successful answer with sources.
+![Successful answer with sources](../image/answer.png)

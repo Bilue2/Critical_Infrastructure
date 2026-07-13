@@ -32,11 +32,11 @@ It is not a general chatbot. It is designed for grounded analysis over critical 
 
 ## Screenshots
 
-TODO: Insert screenshot of the Streamlit chat screen.
+![Streamlit chat screen](image/chat.png)
 
-TODO: Insert screenshot of an answer with sources expanded.
+![Answer with sources expanded](image/answer.png)
 
-TODO: Insert screenshot of the sidebar settings.
+![Sidebar settings](image/sidebar.png)
 
 ## Quick Start
 

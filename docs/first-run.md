@@ -105,4 +105,4 @@ Try one of them first. Expected result:
 2. The app writes an answer.
 3. The app lists sources.
 
-TODO: Insert screenshot of the first successful response.
+![First successful response](../image/answer.png)
