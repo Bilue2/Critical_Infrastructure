@@ -1,284 +1,435 @@
-# 🔐 Energy Sector Cybersecurity RAG System (NERC / NIST / CISA)
+# Energy Sector Cybersecurity RAG Assistant
 
-A Retrieval-Augmented Generation (RAG) system for **critical infrastructure cybersecurity intelligence**, built for analyzing:
+This project is a local question-answering application for energy-sector cybersecurity research. It helps users ask plain-English questions about critical infrastructure cybersecurity and receive answers grounded in a document collection.
 
-- NERC CIP standards
-- NIST Cybersecurity Framework / SP 800-53
-- CISA guidance
-- OT / ICS security documentation
+The application is built with Python, Streamlit, OpenAI, and Pinecone. In simple terms:
 
-It enables grounded AI answers with **traceable citations from regulatory documents**.
+- Python runs the application.
+- Streamlit provides the browser-based chat screen.
+- OpenAI turns questions and documents into searchable meaning and writes the final answer.
+- Pinecone stores searchable document chunks.
 
----
+## Who This Is For
 
-# 🚀 What This System Does
+This project is for:
 
-Ask questions like:
+- Energy-sector cybersecurity analysts.
+- Utility security and compliance teams.
+- Policy researchers working with NERC, NIST, CISA, DOE, FERC, and OT/ICS guidance.
+- Developers maintaining a retrieval-augmented generation system.
 
-- What are NERC CIP access control requirements?
-- How should incident response be handled in OT environments?
-- What risks exist in energy infrastructure systems?
-- How does NIST CSF map to this scenario?
-- What mitigations are recommended by CISA?
+It is not a general chatbot. It is designed for grounded analysis over critical infrastructure and energy-sector cybersecurity documents.
 
-The system:
-- retrieves relevant regulatory chunks
-- applies control-family detection
-- generates grounded answers with citations
-- avoids hallucinations
+## What It Can Do
 
----
+- Answer questions about energy-sector cybersecurity risks.
+- Retrieve evidence from local PDF-derived text chunks.
+- Cite the source documents used for an answer.
+- Group findings by cybersecurity control family.
+- Draft policy recommendations and action plans.
+- Refresh the knowledge base with selected web sources.
+- Run through a browser interface or a command-line script.
 
-# 🧠 Core Architecture
+## Screenshots
+
+TODO: Insert screenshot of the Streamlit chat screen.
+
+TODO: Insert screenshot of an answer with sources expanded.
+
+TODO: Insert screenshot of the sidebar settings.
+
+## Quick Start
+
+These steps assume you have just downloaded the repository and want to run the app on your own computer.
+
+### 1. Install Python
+
+Python is the program that runs this project.
+
+Install Python 3.10 or newer. The repository has been used with Python 3.13, based on the local virtual environment.
+
+Check your version:
+
+```bash
+python --version
+```
+
+What this does: prints the Python version installed on your computer.
+
+Expected output:
 
 ```text
-User Query
-   ↓
-Embedding (OpenAI)
-   ↓
-Pinecone Vector Search
-   ↓
-Control-family filtering (NERC / NIST / CISA)
-   ↓
-Context assembly
-   ↓
-LLM grounded generation (GPT-4.1-mini)
-   ↓
-Structured cybersecurity response
+Python 3.x.x
+```
 
-# Project Structure
-├── README.md
-├── app
-│   ├── control_families.py   # Detects NERC/NIST control categories
-│   └── rag.py                # Core retrieval + generation engine
-│
-├── config.py
-│
-├── data
-│   ├── critical_infra_corpus.jsonl
-│   └── pdf/
-│
-├── scripts
-│   ├── 02_prepare_energy_json.py
-│   ├── 03_index_pinecone.py
-│   ├── 04_query_bot.py
-│   └── 05_eval_grounding.py
-│
-├── streamlit_app.py
-└── requirements.txt
+If the command is not found, install Python and try again.
 
-# Installation
-##1.Create Environment
+### 2. Create a Virtual Environment
+
+A virtual environment is a private folder for this project's Python libraries. It keeps this project separate from other Python projects on your computer.
+
+On macOS or Linux:
+
+```bash
 python -m venv venv
-source venv/bin/activate   # Mac/Linux
-venv\Scripts\activate      # Windows
+```
 
-##2. Install dependencies
+On Windows:
+
+```powershell
+python -m venv venv
+```
+
+What this does: creates a folder named `venv/`.
+
+Expected output: usually no text appears. That is normal.
+
+### 3. Turn On the Virtual Environment
+
+On macOS or Linux:
+
+```bash
+source venv/bin/activate
+```
+
+On Windows PowerShell:
+
+```powershell
+venv\Scripts\Activate.ps1
+```
+
+What this does: tells your terminal to use this project's private Python setup.
+
+Expected output: your terminal prompt may show `(venv)`.
+
+### 4. Install the Project Libraries
+
+```bash
 pip install -r requirements.txt
+```
 
-3. Setup .env
-OPENAI_API_KEY=your_key
-PINECONE_API_KEY=your_key
+What this does: downloads the Python libraries listed in `requirements.txt`.
 
+Why it matters: the application cannot run until these libraries are installed.
+
+Expected output: many lines ending with a success message.
+
+Common error: if you see `pip: command not found`, try:
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+### 5. Create Your `.env` File
+
+An environment variable is a setting the app reads when it starts. A `.env` file is a simple text file that stores these settings.
+
+Create a file named `.env` in the project root:
+
+```text
+OPENAI_API_KEY=your_openai_api_key_here
+PINECONE_API_KEY=your_pinecone_api_key_here
 PINECONE_INDEX=energy-cyber-index
 PINECONE_CLOUD=aws
 PINECONE_REGION=us-east-1
-
 OPENAI_EMBED_MODEL=text-embedding-3-small
 OPENAI_MODEL=gpt-4.1-mini
+```
 
-# Optional live web refresh
-SERPAPI_API_KEY=your_key
-ENABLE_SERPAPI_SEARCH=true
-SERPAPI_MAX_RESULTS=3
-SERPAPI_QUERY_TEMPLATE={query} critical infrastructure cybersecurity energy sector
+Do not share your `.env` file. It contains secret keys.
 
-#How to Run Each File
-🟡 STEP 1 — Prepare Energy Corpus
-Script:
+### 6. Build the Local Corpus
 
-scripts/02_prepare_energy_json.py
+The repository includes PDF files in `data/pdf/`. This command extracts text from them and creates a searchable text file.
 
-Run:
-python -m scripts.02_prepare_energy_json \
-  --input data/pdf \
-  --output data/critical_infra_corpus.jsonl
-What it does:
-Extracts text from PDFs
-Converts NERC/NIST/CISA documents into structured chunks
-Produces JSONL dataset
-🟠 STEP 2 — Index into Pinecone
-Script:
+```bash
+python -m scripts.02_prepare_energy_json
+```
 
-scripts/03_index_pinecone.py
+What this does: reads PDFs and writes `data/critical_infra_corpus.jsonl`.
 
-Run:
-python -m scripts.03_index_pinecone \
-  --chunks data/critical_infra_corpus.jsonl \
-  --reset
-Optional namespace:
-python -m scripts.03_index_pinecone \
-  --chunks data/critical_infra_corpus.jsonl \
-  --namespace nerc-cip
-What it does:
-Generates embeddings
-Detects control families (Access Control, Incident Response, etc.)
-Stores vectors in Pinecone
-Adds metadata for filtering and retrieval
-🟢 STEP 3 — Refresh Web Sources
-Script:
+Expected output: lines that begin with `Processing:` and end with `Done!`.
 
-scripts/06_ingest_web_sources.py
+### 7. Upload the Corpus to Pinecone
 
-Run default SerpAPI discovery:
-python -m scripts.06_ingest_web_sources
+Pinecone is the searchable memory for the app.
 
-Run with direct URLs:
-python -m scripts.06_ingest_web_sources \
-  --url https://www.cisa.gov/news-events/cybersecurity-advisories
+```bash
+python -m scripts.03_index_pinecone --chunks data/critical_infra_corpus.jsonl --reset
+```
 
-Run from a URL file:
-python -m scripts.06_ingest_web_sources \
-  --urls-file urls.txt
+What this does: turns each text chunk into a searchable vector and stores it in Pinecone.
+
+Why it matters: without this step, the app may fall back to a slower local search or return weaker answers.
+
+Expected output: progress bars and `Indexing complete`.
+
+Warning: `--reset` deletes the existing contents of the selected Pinecone index before uploading the current corpus.
+
+### 8. Start the Browser App
+
+```bash
+streamlit run streamlit_app.py
+```
+
+What this does: starts the web interface on your computer.
+
+Expected output: Streamlit prints a local address, usually:
+
+```text
+Local URL: http://localhost:8501
+```
+
+Open that address in your browser.
+
+## Requirements
+
+| Requirement | Needed? | Notes |
+| --- | --- | --- |
+| Python 3.10 or newer | Yes | Python runs the app and scripts. |
+| OpenAI API key | Yes | Used for embeddings and final answers. |
+| Pinecone account and API key | Yes for full retrieval | Used to store and search document vectors. |
+| SerpAPI key | Optional | Used for live web discovery and refresh. |
+| Internet access | Yes for setup and external services | Needed to install packages and call OpenAI, Pinecone, and optional SerpAPI. |
+| Docker | No | This repo does not include Docker files. |
+| Traditional database | No | The app uses JSONL files and Pinecone, not PostgreSQL, MySQL, or SQLite. |
+
+## Environment Variables
+
+| Name | Required? | Default | Description | Example |
+| --- | --- | --- | --- | --- |
+| `OPENAI_API_KEY` | Yes | None | Secret key for OpenAI. | `sk-...` |
+| `PINECONE_API_KEY` | Yes for Pinecone search | None | Secret key for Pinecone. | `pcsk_...` |
+| `PINECONE_INDEX` | Yes for Pinecone search | `reviews-index` in the indexing script only | Pinecone index name. Use one consistent value. | `energy-cyber-index` |
+| `PINECONE_CLOUD` | Needed when creating an index | `aws` | Pinecone cloud provider. | `aws` |
+| `PINECONE_REGION` | Needed when creating an index | `us-east-1` | Pinecone region. | `us-east-1` |
+| `PINECONE_NAMESPACE` | No | Empty string | Optional Pinecone namespace. A namespace separates groups of vectors inside one index. | `nerc-cip` |
+| `OPENAI_EMBED_MODEL` | No | `text-embedding-3-small` | OpenAI model used to create searchable vectors. | `text-embedding-3-small` |
+| `OPENAI_MODEL` | No | `gpt-4.1-mini` | OpenAI model used to write answers. | `gpt-4.1-mini` |
+| `SERPAPI_API_KEY` | Optional | None | Secret key for SerpAPI web search. | `abc123` |
+| `SERPAPI_KEY` | Optional | None | Alternate name supported for SerpAPI. | `abc123` |
+| `ENABLE_SERPAPI_SEARCH` | Optional | `true` | Set to `false` to stop automatic live search during questions. | `false` |
+| `SERPAPI_MAX_RESULTS` | Optional | `3` | Number of live search results used during a question. | `3` |
+| `SERPAPI_QUERY_TEMPLATE` | Optional | `{query} critical infrastructure cybersecurity energy sector` | Search phrase pattern for live web search. | `{query} NERC CIP advisory` |
+| `PINECONE_ID_STRATEGY` | Optional | `url` | How live web chunk IDs are made. `content` uses text content instead. | `url` |
+| `CHROMA_PERSIST_PATH` | No active use found | `./chroma_fcc_storage` | Present in `config.py`, but not used by the current RAG flow. | `./chroma_fcc_storage` |
+| `CHROMA_COLLECTION_NAME` | No active use found | `fcc_documents` | Present in `config.py`, but not used by the current RAG flow. | `fcc_documents` |
+
+## Running the Project
+
+### Development
+
+Use development mode when you are editing or testing the project locally.
+
+```bash
+streamlit run streamlit_app.py
+```
+
+Expected result: the browser app opens and lets you ask questions.
+
+### Command-Line Query
+
+Use this when you want a JSON answer in the terminal.
+
+```bash
+python -m scripts.04_query_bot --q "What are NERC CIP access control requirements?"
+```
+
+Add debug information:
+
+```bash
+python -m scripts.04_query_bot --q "How should incident response be handled in OT systems?" --debug
+```
+
+### Testing and Evaluation
+
+This repository does not include a separate unit test suite. It does include an evaluation script that checks sample grounded responses.
+
+```bash
+python -m scripts.05_eval_grounding
+```
+
+What this does: runs several sample questions and writes results to `data/eval_results.jsonl`.
+
+Expected output: `[PASS]` lines or a list of failed checks.
+
+### Production
+
+TODO: Information could not be determined automatically.
+
+No production deployment files, process manager files, container files, or cloud deployment configuration were found in the repository.
+
+## Repository Structure
+
+```text
+.
+├── app/
+├── data/
+├── docs/
+├── scripts/
+├── config.py
+├── control_families.py
+├── requirements.txt
+├── streamlit_app.py
+└── README.md
+```
+
+| Path | Purpose |
+| --- | --- |
+| `app/` | Core application code for retrieval and answer generation. |
+| `app/rag.py` | Main retrieval-augmented generation pipeline. |
+| `app/control_families.py` | Control-family keyword detection. |
+| `control_families.py` | Duplicate top-level control-family helper used by scripts. |
+| `data/` | Local corpus and source PDFs. |
+| `data/pdf/` | PDF documents used to build the corpus. |
+| `data/critical_infra_corpus.jsonl` | Extracted text chunks used for retrieval. |
+| `scripts/` | Command-line maintenance and workflow scripts. |
+| `streamlit_app.py` | Browser-based user interface. |
+| `config.py` | Environment loading helpers. |
+| `requirements.txt` | Python libraries needed by the project. |
+| `docs/` | Full end-user and maintainer documentation. |
+
+## Common Tasks
+
+### Rebuild the corpus from PDFs
+
+```bash
+python -m scripts.02_prepare_energy_json
+```
+
+Use this after adding or removing PDF files in `data/pdf/`.
+
+### Re-upload the corpus to Pinecone
+
+```bash
+python -m scripts.03_index_pinecone --chunks data/critical_infra_corpus.jsonl --reset
+```
+
+Use this after rebuilding the corpus.
+
+### Add web sources to Pinecone
+
+```bash
+python -m scripts.06_ingest_web_sources --url https://example.gov/example-page
+```
+
+Use this when you have a specific source URL to ingest.
 
 Preview without writing to Pinecone:
+
+```bash
 python -m scripts.06_ingest_web_sources --dry-run
+```
 
-What it does:
-Searches for Energy Sector cybersecurity policy and OT/ICS sources
-Scrapes HTML and PDF sources
-Chunks and embeds source text
-Checks similarity against existing Pinecone vectors
-Adds only novel chunks to Pinecone
-🔵 STEP 4 — Query Bot (CLI)
-Script:
+### Ask a question in the terminal
 
-scripts/04_query_bot.py
+```bash
+python -m scripts.04_query_bot --q "What are common attack vectors against energy-sector ICS?"
+```
 
-Run basic query:
-python -m scripts.04_query_bot \
-  --q "What are access control requirements under NERC CIP?"
-Run with debugging:
-python -m scripts.04_query_bot \
-  --q "How should incident response be handled in OT systems?" \
-  --debug
-What it does:
-Runs retrieval pipeline
-Calls LLM
-Returns structured cybersecurity answer
-🟣 STEP 5 — Streamlit App (UI)
-Run:
+### Restart the app
+
+Stop Streamlit with `Control+C`, then run:
+
+```bash
 streamlit run streamlit_app.py
-Features:
-Chat interface
-Grounded cybersecurity answers
-Retrieved chunk evidence display
-Policy recommendation breakdown
-Debug mode toggle
-🔴 STEP 6 — Evaluation
-Script:
+```
 
-scripts/05_eval_grounding.py
+## Troubleshooting
 
-Run:
-python -m scripts.05_eval_grounding
-What it checks:
-Grounding quality
-JSON schema validation
-Chunk citation accuracy
-Retrieval consistency
-🧠 Key Concepts
-🔐 1. Retrieval-Augmented Generation (RAG)
-Query → Retrieve documents → LLM answers using only evidence
+### `Missing env var: OPENAI_API_KEY`
 
-Prevents hallucination and ensures regulatory accuracy.
+Cause: the app cannot find your OpenAI key.
 
-🧩 2. Control Family Detection
+Fix: create or update `.env` and include:
 
-Automatically detects cybersecurity domains:
+```text
+OPENAI_API_KEY=your_openai_api_key_here
+```
 
-Access Control
-Incident Response
-Risk Management
-Monitoring & Logging
-Patch Management
-Network Security
-📊 3. Pinecone Vector Search
+Verification: restart the app and ask a question.
 
-Stores:
+### `Missing OPENAI_API_KEY or PINECONE_API_KEY`
 
-embeddings of regulatory text
-metadata (org, sector, chunk_id)
-control tags
+Cause: the indexing script needs both keys.
 
-Enables semantic search across compliance documents.
+Fix: add both values to `.env`.
 
-🏭 4. Energy Sector Focus
+Verification:
 
-Designed for:
+```bash
+python -m scripts.03_index_pinecone --chunks data/critical_infra_corpus.jsonl
+```
 
-Power grids
-Utility operators
-Industrial control systems (ICS)
-OT environments
-⚠️ Common Issues
-❌ "Missing API Key"
+### `No module named app`
 
-Fix .env file:
+Cause: the script was run as a file path instead of a Python module.
 
-OPENAI_API_KEY=...
-PINECONE_API_KEY=...
-❌ "No module named app"
+Fix: run scripts with `python -m`.
 
-Always run with:
+Use:
 
-python -m scripts.03_index_pinecone
+```bash
+python -m scripts.04_query_bot --q "test question"
+```
 
-NOT:
+Avoid:
 
-python scripts/03_index_pinecone.py
-❌ Empty search results
+```bash
+python scripts/04_query_bot.py
+```
 
-Try:
+### Empty or weak answers
 
-increasing top_k
-running --reset
-checking embeddings consistency
-🚀 Recommended Workflow
+Likely causes:
 
-Run in order:
+- The Pinecone index is empty.
+- `PINECONE_INDEX` points to the wrong index.
+- The corpus was not rebuilt after PDF changes.
+- The question does not match the available documents.
 
-# 1. Build corpus
-python -m scripts.02_prepare_energy_json --input data/pdf --output data/critical_infra_corpus.jsonl
+Fix:
 
-# 2. Index data
+```bash
+python -m scripts.02_prepare_energy_json
 python -m scripts.03_index_pinecone --chunks data/critical_infra_corpus.jsonl --reset
+```
 
-# 3. Query system
-python -m scripts.04_query_bot --q "What are NERC CIP access control requirements?"
+## FAQ
 
-# 4. UI
-streamlit run streamlit_app.py
-🔥 Future Improvements
-Phase 2 (Advanced RAG)
-Hybrid search (BM25 + vector)
-Reranking model
-Chunk compression
-Citation verification layer
-Phase 3 (Enterprise)
-CIP compliance scoring engine
-Asset risk modeling
-Audit report generator (PDF)
-SOC-style incident response assistant
-📌 Summary
+### What is RAG?
 
-This system is a:
+RAG means retrieval-augmented generation. In plain English, the app first searches documents, then asks an AI model to answer using those documents.
 
-🔐 Grounded AI assistant for energy sector cybersecurity compliance
+### Where is my data stored?
 
-It ensures:
+The local source documents are in `data/pdf/`. Extracted text is in `data/critical_infra_corpus.jsonl`. Search vectors are stored in Pinecone.
 
-no hallucinations
-traceable regulatory evidence
-OT/ICS-aware reasoning
-structured compliance outputs
+### Does this app have user accounts?
+
+No. No login, roles, or user account system was found in this repository.
+
+### Does this app have an API?
+
+No HTTP API endpoints were found. The app is used through Streamlit or command-line scripts.
+
+### Is there a database?
+
+There is no traditional database. The project uses local files and Pinecone.
+
+### Can I use it without Pinecone?
+
+Partly. The code can fall back to local keyword retrieval if Pinecone access fails, but Pinecone is required for the intended vector search workflow.
+
+## More Documentation
+
+Start with [docs/README.md](docs/README.md).
+
+Recommended reading order:
+
+1. [Getting Started](docs/getting-started.md)
+2. [Configuration](docs/configuration.md)
+3. [First Run](docs/first-run.md)
+4. [Daily Usage](docs/daily-usage.md)
+5. [Troubleshooting](docs/troubleshooting.md)
+6. [Developer Guide](docs/developer-guide.md)
