@@ -62,7 +62,3 @@ The repository does not include:
 - A traditional relational database.
 - Docker or container setup.
 - A documented production deployment pipeline.
-
-Where details could not be determined from the repository, this documentation says:
-
-> TODO: Information could not be determined automatically.
